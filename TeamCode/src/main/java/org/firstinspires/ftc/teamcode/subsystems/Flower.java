@@ -17,7 +17,7 @@ public class Flower {
     }
 
     public Command reset() {return runOnce(() -> flowerServo.setPosition(0));}
-    public Command run() {return runOnce(() -> flowerServo.setPosition(0.1));}
+    public Command run() {return runOnce(() -> flowerServo.getPosition());}
 
     public void addTelemetry(TelemetryPacket packet) {
         packet.put("intakePower", flowerServo.getPosition());

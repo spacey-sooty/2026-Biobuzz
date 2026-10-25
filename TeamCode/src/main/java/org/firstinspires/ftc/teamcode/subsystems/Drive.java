@@ -108,6 +108,8 @@ public class Drive extends SubsystemBase {
         packet.put("heading", getHeading());
         packet.put("gyroCalibrated", gyroCalibrated);
 
+//        packet.put("pos", exp.getPose());
+//        packet.put("heading", exp.getHeading());
         packet.put("flPower", frontLeft.getPower());
         packet.put("frPower", frontRight.getPower());
         packet.put("blPower", backLeft.getPower());

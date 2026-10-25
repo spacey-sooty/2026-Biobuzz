@@ -13,6 +13,7 @@ import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.command.Commands;
 import com.seattlesolvers.solverslib.command.FunctionalCommand;
+import com.seattlesolvers.solverslib.command.RunCommand;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Drive;
@@ -28,26 +29,13 @@ public class Autos extends CommandOpMode {
 
     private static final long SPIN_UP_MILLIS = 1000;
     private static final long SHOOT_MILLIS = 4000;
-    private Autos autos;
 
-    private final Drive drive;
-    private final Indexer indexer;
-    private final Shooter shooter;
-    private final Intake intake;
+    // OpModes need a no-arg constructor, so everything is created in initialize()
+    private Drive drive;
+    private Indexer indexer;
+    private Shooter shooter;
+    private Intake intake;
     private Follower follower;
-
-
-    public Autos(Drive drive, Indexer indexer, Shooter shooter, Intake intake) {
-        this(drive, indexer, shooter, intake, null);
-    }
-
-    public Autos(Drive drive, Indexer indexer, Shooter shooter, Intake intake, Follower follower) {
-        this.follower = follower;
-        this.drive = drive;
-        this.indexer = indexer;
-        this.shooter = shooter;
-        this.intake = intake;
-    }
 
 //    Poses
     private final PoseFactory p = PoseFactory.degrees();
@@ -65,18 +53,20 @@ public class Autos extends CommandOpMode {
 
     // Pedro poses are in inches and radians, x is forward and y is left of where the robot starts.
     public Command pathAuto() {
-        Pose startPose = new Pose(0, 0, 0);
-        Pose shootPose = new Pose(24, 0, 0);
-        Pose park = new Pose(48, 24, 0);
+        Pose start = new Pose(136.2, 15, Math.toRadians(180));
+        Pose point2 = new Pose(56, 15, Math.toRadians(180));
+        Pose point3 = new Pose(56, 15, Math.toRadians(90));
+        Pose shoot = new Pose(56, 7.8, Math.toRadians(90));
 
-        Path toShoot = line(startPose, shootPose).constant(0);
-        Path toPark = curve(shootPose, new Pose(48, 0), park).tangent();
+        Path part1 = line(start, point2).linear(start, point2);
+        Path part2 = line(point3, shoot).linear(point3, shoot);
 
         return Commands.sequence(
-                drive.runOnce(() -> follower.setPose(startPose)),
-                followPath(toShoot),
-                shooter.shoot(indexer),
-                followPath(toPark));
+                drive.runOnce(() -> follower.setPose(start)),
+                intake.run(1),
+                followPath(part1),
+                followPath(part2),
+                shooter.shoot(indexer));
     }
 
     // Only starts the path and waits for it, the OpMode has to call follower.update() every loop.
@@ -93,22 +83,19 @@ public class Autos extends CommandOpMode {
 
     @Override
     public void initialize() {
-        autos = new Autos(new Drive(hardwareMap), new Indexer(hardwareMap), new Shooter(hardwareMap), new Intake(hardwareMap));
+        drive = new Drive(hardwareMap);
+        indexer = new Indexer(hardwareMap);
+        shooter = new Shooter(hardwareMap);
+        intake = new Intake(hardwareMap);
 
         follower = Constants.create(hardwareMap);
-        follower.setPose(startPose);
+        if (follower == null)
+            throw new IllegalStateException("Constants.create() returned null, fill in pedro/Constants.java with your tuned values");
+
+        // follower has to update every loop for paths to run
+        schedule(new RunCommand(follower::update), pathAuto());
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-    }
-
-    @Override
-    public void run() {
-        followPath(Path );
-    }
-
-    @Override
-    public void loop() {
-        follower.update();
     }
 }

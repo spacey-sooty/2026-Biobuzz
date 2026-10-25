@@ -4,7 +4,9 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
+import com.seattlesolvers.solverslib.command.Commands;
 import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.RunCommand;
 import com.seattlesolvers.solverslib.command.button.Trigger;
@@ -28,7 +30,7 @@ public class Robot {
     private final GamepadEx driver;
     private final Telemetry telemetry;
     private final FtcDashboard dashboard;
-
+    ElapsedTime looptimer = new ElapsedTime();
 
     public Robot(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -50,25 +52,29 @@ public class Robot {
         drive.setDefaultCommand(
                 drive.run(() -> drive.drive(
                         -gamepad.left_stick_y, gamepad.left_stick_x, gamepad.right_stick_x)));
+        intake.setDefaultCommand(intake.stop());
 
         driver.getGamepadButton(GamepadKeys.Button.OPTIONS)
                 .whenPressed(drive::resetYaw);
 
         driver.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER)
-                .whenPressed(intake.toggle());
+                .whenPressed(intake.run(-1)).whenInactive(intake.stop());
 
         driver.getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER)
-                .whenPressed(intake.reverse());
+                .whenPressed(shooter.findBreakawayVoltage());
 
     //      shooter
         new Trigger(() -> driver.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
-                .whenActive(shooter.shoot(indexer))
-                .whenInactive(indexer.stop().andThen(shooter.stop()));
+                .whenActive(shooter.run())
+                .whenInactive(shooter.stop());
 
         new Trigger(() -> driver.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5)
-                .whenActive(flower.run())
-                .whenInactive(flower.reset());
+                .whenActive(intake.run(1))
+                .whenInactive(intake.stop());
 
+        new Trigger(shooter::atRPS)
+                .whenActive(Commands.parallel(indexer.run(1), intake.run(1)))
+                .whenInactive(indexer.reverse(0.5));
 
 
         telemetry.addData("Status", "Initialized");
@@ -82,8 +88,11 @@ public class Robot {
         indexer.addTelemetry(packet);
         shooter.addTelemetry(packet);
 
-        dashboard.sendTelemetryPacket(packet);
+        double loop_time = looptimer.milliseconds();
+        looptimer.reset();
+        packet.put("Loop Time", loop_time);
 
+        dashboard.sendTelemetryPacket(packet);
         telemetry.addData("Status", "Running");
         telemetry.update();
     }

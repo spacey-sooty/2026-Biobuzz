@@ -11,6 +11,8 @@ public class Indexer extends SubsystemBase {
 
     private final DcMotor indexerMotor;
 
+    public boolean indexerActive = false;
+
     public Indexer(HardwareMap hardwareMap) {
         indexerMotor = hardwareMap.get(DcMotor.class, "indexerMotor");
         indexerMotor.setDirection(DcMotorEx.Direction.REVERSE);
@@ -21,7 +23,11 @@ public class Indexer extends SubsystemBase {
     }
 
     public Command feed(double power) {
-        return runEnd(() -> indexerMotor.setPower(power), () -> indexerMotor.setPower(0));
+        return runEnd(() -> indexerMotor.setPower(power), () -> reverse(1));
+    }
+
+    public Command reverse(double power) {
+        return run(() -> indexerMotor.setPower(-power));
     }
 
     public Command stop(){
