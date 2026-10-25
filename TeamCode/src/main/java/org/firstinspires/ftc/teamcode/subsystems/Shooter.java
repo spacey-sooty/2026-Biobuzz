@@ -22,13 +22,14 @@ import java.util.function.DoubleConsumer;
 public class Shooter extends SubsystemBase {
 
     // Live-tunable from FTC Dashboard. PID gains apply to the velocity loop; kS/kV/kA are the feedforward terms.
-    public static double kP = 0.0194;
-    public static double kI = 0;
-    public static double kD = 0;
-    public static double kF = 0;
-    public static double kS = 0.4;
-    public static double kV = 0.135;
-    public static double kA = 0.119;
+    // volatile: dashboard edits are written from another thread, and the FTC Dashboard docs recommend it for config fields
+    public static volatile double kP = 0.0194;
+    public static volatile double kI = 0;
+    public static volatile double kD = 0;
+    public static volatile double kF = 0;
+    public static volatile double kS = 0.4;
+    public static volatile double kV = 0.135;
+    public static volatile double kA = 0.119;
 
     // goBILDA 5000 Series 12VDC motor (5000-0002-4008), 6000 RPM, no gearbox: 28 encoder ticks per revolution
     private static final double TICKS_PER_REV = 28.0;
@@ -149,7 +150,13 @@ public class Shooter extends SubsystemBase {
         packet.put("shooterAppliedVoltage", appliedVoltage);
         packet.put("shooterBreakawayVoltage", breakawayVoltage);
 
+        // Gains as the robot is currently using them, to confirm dashboard edits arrive
         packet.put("kp", kP);
-
+        packet.put("kI", kI);
+        packet.put("kD", kD);
+        packet.put("kF", kF);
+        packet.put("kS", kS);
+        packet.put("kV", kV);
+        packet.put("kA", kA);
     }
 }
