@@ -148,5 +148,8 @@ public class Shooter extends SubsystemBase {
         packet.put("rightTPS", rightShooter.getVelocity());
         packet.put("shooterAppliedVoltage", appliedVoltage);
         packet.put("shooterBreakawayVoltage", breakawayVoltage);
+
+        packet.put("kp", kP);
+
     }
 }
